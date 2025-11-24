@@ -578,16 +578,13 @@ body {
         grid-template-columns: 1fr;
         grid-template-rows: auto;
         height: 100vh;
-        /* Full viewport height */
         width: 100vw;
         display: flex;
         flex-direction: column;
         padding: 0 20px;
-        /* Keep horizontal padding */
         gap: 0;
-        /* We will use margins for spacing */
-        overflow: hidden;
-        /* No scrolling within container */
+        overflow-y: auto;
+        /* Permetti la navigazione verticale su mobile */
     }
 
     /* Order 1: Left Panel (Preview) - 28% Height */
@@ -635,12 +632,13 @@ body {
         /* 1% bottom margin */
     }
 
-        #canvas-main {
-            max-height: 250% !important;
-            width: 250% !important;
-            max-width: 250% !important;
-            aspect-ratio: auto;
-            /* Raddoppia la dimensione su mobile */
+    #canvas-main {
+        width: 100vw !important;
+        max-width: 100vw !important;
+        height: auto !important;
+        max-height: 60vh !important;
+        aspect-ratio: auto;
+        /* Adatta il canvas allo schermo mobile */
     }
 
     .panel-right-top,

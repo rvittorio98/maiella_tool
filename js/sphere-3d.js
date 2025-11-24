@@ -227,6 +227,8 @@ function createDitheringButton() {
     wrapper.style.display = 'flex';
     wrapper.style.alignItems = 'center';
     wrapper.style.gap = '40px';
+    wrapper.style.zIndex = '100'; // Ensure it's above everything
+    wrapper.style.pointerEvents = 'auto'; // Ensure it captures clicks
 
     const btn = document.createElement('button');
     btn.id = 'btn-toggle-dithering';
@@ -239,7 +241,14 @@ function createDitheringButton() {
     btn.style.fontSize = '10px';
     btn.style.cursor = 'pointer';
     btn.style.fontFamily = 'inherit';
+    btn.style.pointerEvents = 'auto'; // Explicitly allow pointer events
     btn.onclick = toggleAsciiOverlay;
+    // Touch support for mobile
+    btn.addEventListener('touchstart', function (e) {
+        e.preventDefault(); // Prevent ghost click
+        e.stopPropagation(); // Stop bubbling
+        toggleAsciiOverlay();
+    }, { passive: false });
     // let the wrapper manage positioning
 
     // Add preview panel theme toggle button
@@ -254,6 +263,7 @@ function createDitheringButton() {
     btnPreviewTheme.style.fontSize = '10px';
     btnPreviewTheme.style.cursor = 'pointer';
     btnPreviewTheme.style.fontFamily = 'inherit';
+    btnPreviewTheme.style.pointerEvents = 'auto'; // Explicitly allow pointer events
     btnPreviewTheme.onclick = function () {
         var panel = document.querySelector('.panel-right');
         if (!panel) {
@@ -264,6 +274,19 @@ function createDitheringButton() {
         }
         togglePreviewPanelTheme();
     };
+    // Touch support for mobile
+    btnPreviewTheme.addEventListener('touchstart', function (e) {
+        e.preventDefault(); // Prevent ghost click
+        e.stopPropagation(); // Stop bubbling
+        var panel = document.querySelector('.panel-right');
+        if (!panel) {
+            btnPreviewTheme.disabled = true;
+            btnPreviewTheme.style.opacity = '0.5';
+            console.error('togglePreviewPanelTheme: .panel-right not found in DOM. Please check your HTML.');
+            return;
+        }
+        togglePreviewPanelTheme();
+    }, { passive: false });
 
     wrapper.appendChild(btn);
     wrapper.appendChild(btnPreviewTheme);
