@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Rock Mesh Tool</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="style.css?v=5">
+
+    <!-- Three.js Library -->
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/",
+            "three/examples/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"
+        }
+    }
+    </script>
+
+    <!-- Application Scripts -->
+    <script type="module" src="js/sphere-3d.js"></script>
+    <!-- <script defer src="js/typing-animation.js"></script> -->
+    <script defer src="js/script.js"></script>
+    <script>
+        // Sliders - inline to avoid cache issues
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                const sliders = document.querySelectorAll('input[type="range"]');
+
+                sliders.forEach(slider => {
+                    const valueDisplay = slider.nextElementSibling;
+
+                    slider.addEventListener('input', function () {
+                        valueDisplay.textContent = this.value;
+
+                        if (window.Sphere3D) {
+                            if (this.id === 'lateralScale') {
+                                window.Sphere3D.updateLateralScale(parseFloat(this.value) / 100);
+                            } else if (this.id === 'rotationY') {
+                                window.Sphere3D.updateRotation('y', parseFloat(this.value));
+                            } else if (this.id === 'peakCount') {
+                                window.Sphere3D.updatePeakCount(parseInt(this.value));
+                            } else if (this.id === 'roughness') {
+                                window.Sphere3D.updateDisplacement('roughness', parseFloat(this.value));
+                            } else if (this.id === 'displacementScale') {
+                                window.Sphere3D.updateDisplacement('scale', parseFloat(this.value));
+                            } else if (this.id === 'detail') {
+                                window.Sphere3D.updateDisplacement('detail', parseFloat(this.value));
+                            } else if (this.id === 'contrast') {
+                                window.Sphere3D.updatePostProcessing('contrast', parseFloat(this.value));
+                            } else if (this.id === 'blur') {
+                                window.Sphere3D.updatePostProcessing('blur', parseFloat(this.value));
+                            } else if (this.id === 'threshold') {
+                                window.Sphere3D.updatePostProcessing('threshold', parseFloat(this.value));
+                            }
+                        }
+                    });
+                });
+
+                console.log('✅ Sliders initialized');
+            }, 200);
+        });
+    </script>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Pannello sinistro nero -->
+        <div class="panel-left">
+            <div class="panel-left-top">
+                <div class="top-left-section">
+                    <span class="text-left">MAIELLA DISPLAY</span>
+                    <div class="text-left subtitle-section">
+                        <p>OPENTYPE</p>
+                        <p>IMPORT TYPE &lt;&lt; FBX</p>
+                        <p>EXPORT TYPE &gt;&gt; PNG</p>
+                    </div>
+                </div>
+                <span class="text-right">REAL TIME MOUNTAIN GLYPHS</span>
+            </div>
+
+            <!-- Riquadro tratteggiato bianco -->
+            <div class="preview-box">
+                <canvas id="canvas-preview"></canvas>
+                <span class="cross top-left"></span>
+                <span class="cross top-right"></span>
+                <span class="cross bottom-left"></span>
+                <span class="cross bottom-right"></span>
+            </div>
+
+            <div class="panel-left-bottom">
+                <div class="text-left">
+                    <p>OPEN TYPE</p>
+                </div>
+                <span class="text-right">MAIELLA</span>
+            </div>
+        </div>
+
+        <!-- Pannello destro con trattini verdi -->
+        <div class="panel-right">
+            <canvas id="canvas-main"></canvas>
+            <div class="panel-right-top">
+                <span class="text-left">OPEN TYPE</span>
+                <span class="text-right">CONTEXTUAL</span>
+            </div>
+            <div class="panel-right-bottom">
+                <span class="text-left">BETA 0.3 - MAIELLA®</span>
+                <span class="text-right">REAL TIME MOUNTAIN GLYPHS</span>
+            </div>
+        </div>
+
+        <!-- Codice grigio chiaro -->
+        <div class="code-area">
+            <div class="code-text"></div>
+        </div>
+
+        <!-- UI Controls grigio chiaro -->
+        <div class="controls-area">
+            <div class="sliders-container">
+                <!-- Column 1 - Rotation Controls -->
+                <div class="slider-column">
+                    <!-- Slider 'LATERAL SCALE' eliminato -->
+                    <div class="slider-row">
+                        <label>ROTATION Y</label>
+                        <input type="range" min="-50" max="50" value="-25" id="rotationY">
+                        <span class="value">-25</span>
+                    </div>
+                    <div class="slider-row">
+                        <label>SCALE Y</label>
+                        <input type="range" min="80" max="120" value="100" id="lateralScale">
+                        <span class="value">100</span>
+                    </div>
+                    <div class="slider-row">
+                        <label>PEAK COUNT</label>
+                        <input type="range" min="1" max="5" value="1" id="peakCount">
+                        <span class="value">1</span>
+                    </div>
+                </div>
+
+                <!-- Column 2 - Displacement Controls -->
+                <div class="slider-column">
+                    <div class="slider-row">
+                        <label>FREQUENCY</label>
+                        <input type="range" min="0" max="100" value="50" id="roughness">
+                        <span class="value">50</span>
+                    </div>
+                    <div class="slider-row">
+                        <label>AMPLITUDE</label>
+                        <input type="range" min="0" max="100" value="50" id="displacementScale">
+                        <span class="value">50</span>
+                    </div>
+                    <div class="slider-row">
+                        <label>OCTAVES</label>
+                        <input type="range" min="0" max="100" value="50" id="detail">
+                        <span class="value">50</span>
+                    </div>
+                </div>
+
+                <!-- Column 3 - Post-Processing Controls -->
+                <div class="slider-column">
+                    <div class="slider-row">
+                        <label>CONTRAST</label>
+                        <input type="range" min="0" max="20" value="10" id="contrast">
+                        <span class="value">10</span>
+                    </div>
+                    <div class="slider-row">
+                        <label for="blur">BLUR</label>
+                        <input type="range" min="0" max="30" value="0" id="blur">
+                        <span class="value">0</span>
+                    </div>
+                    <div class="slider-row">
+                        <label for="threshold">THRESHOLD</label>
+                        <input type="range" min="0" max="40" value="15" id="threshold">
+                        <span class="value" id="value-threshold">15</span>
+                    </div>
+                </div>
+                <!-- Export Button come quarto elemento per layout a griglia mobile -->
+                <button class="export-btn" id="exportBtn">Export</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Modal -->
+    <!-- Export Popup Overlay -->
+    <div id="exportOverlay" class="export-overlay" style="display:none;">
+        <div id="exportPopup" class="export-popup">
+            <div class="export-title">SELECT YOUR MAIELLA MOUNTAIN FORMAT FILE</div>
+            <div class="export-btn-row">
+                <button id="exportPNG" class="export-btn-popup">.png</button>
+                <button id="exportSVG" class="export-btn-popup">.sgv</button>
+            </div>
+            <button id="closeExportPopup" class="export-cancel">Cancel</button>
+        </div>
+    </div>
+</body>
+
+</html>
