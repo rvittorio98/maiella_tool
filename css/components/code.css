@@ -10,6 +10,8 @@
     justify-content: flex-end;
     overflow: hidden;
     position: relative;
+    height: 240px;
+    /* Fixed height to prevent code content from expanding panel */
 }
 
 .code-area::before {
@@ -37,6 +39,8 @@
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
+    max-height: 240px;
+    /* Limit content height - adjust to balance top/bottom margins */
 }
 
 .code-line {
