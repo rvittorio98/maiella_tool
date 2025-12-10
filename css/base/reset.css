@@ -1,0 +1,17 @@
+/* === RESET & BASE === */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: #ffffff;
+    width: 100vw;
+    min-height: 100vh;
+    overflow-x: hidden;
+    /* Prevent horizontal scroll */
+    display: flex;
+    flex-direction: column;
+    font-family: 'Roboto Mono', monospace;
+}

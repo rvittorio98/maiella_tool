@@ -1,0 +1,154 @@
+/* === PANEL LEFT (Black) === */
+.panel-left {
+    grid-column: 1;
+    grid-row: 1;
+    background-color: #000000;
+    border-radius: 10px;
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    color: #ffffff;
+    font-size: 8pt;
+    line-height: 1.4;
+    position: relative;
+    min-height: 400px;
+}
+
+.panel-left-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.top-left-section {
+    display: flex;
+    flex-direction: column;
+}
+
+.subtitle-section {
+    margin-top: 30px;
+}
+
+.subtitle-section p {
+    margin: 0;
+    line-height: 1.4;
+}
+
+.panel-left-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+}
+
+.panel-left-bottom .text-left p {
+    margin: 0;
+    line-height: 1.4;
+}
+
+/* === PANEL RIGHT (Canvas) === */
+.panel-right {
+    grid-column: 2;
+    grid-row: 1;
+    background-color: transparent;
+    border-radius: 10px;
+    font-size: 8pt;
+    color: #000000;
+    /* Default Light Theme Text */
+    position: relative;
+    min-height: 400px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* Ensure rounded corners clip content (especially dark background) */
+    overflow: hidden;
+}
+
+/* Green border for light mode */
+.panel-right::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border: 0.5px dashed #002a00;
+    border-radius: 10px;
+    z-index: 50;
+}
+
+/* Hide border in dark mode */
+.panel-right.panel-preview-inverted::after {
+    display: none;
+}
+
+/* Dark Mode Styles */
+.panel-right.panel-preview-inverted {
+    background-color: #002a00;
+    /* Green to match threshold background */
+    color: #ffffff;
+}
+
+/* Base styles for switch buttons (previously inline in App.js) */
+.switch-btn,
+.preview-theme-btn {
+    background-color: transparent;
+    color: #002a00;
+    border: 1px solid #002a00;
+    padding: 2px 8px;
+    font-size: 10px;
+    cursor: pointer;
+    font-family: inherit;
+    pointer-events: auto;
+    transition: all 0.2s;
+}
+
+/* Inverted styles for buttons (Dark Mode) */
+.panel-right.panel-preview-inverted .switch-btn,
+.panel-right.panel-preview-inverted .preview-theme-btn {
+    color: #ffffff;
+    border: 1px solid #ffffff;
+}
+
+#canvas-main {
+    position: relative;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16/9;
+    max-width: 1246px;
+    max-height: 600px;
+}
+
+.panel-right-top {
+    position: absolute;
+    top: 30px;
+    left: 30px;
+    right: 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.panel-right-top .text-left {
+    text-align: left;
+}
+
+.panel-right-top .text-right {
+    text-align: right;
+}
+
+.panel-right-bottom {
+    position: absolute;
+    bottom: 30px;
+    left: 30px;
+    right: 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+}
+
+.panel-right-bottom .text-left {
+    text-align: left;
+}
+
+.panel-right-bottom .text-right {
+    text-align: right;
+}

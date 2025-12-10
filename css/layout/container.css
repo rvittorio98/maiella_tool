@@ -1,0 +1,11 @@
+/* === MAIN CONTAINER === */
+.container {
+    width: 100%;
+    min-height: 100vh;
+    padding: 20px;
+    display: grid;
+    /* Desktop: 2 columns, 2 rows */
+    grid-template-columns: minmax(360px, 3fr) 7fr;
+    grid-template-rows: auto auto;
+    gap: 20px;
+}

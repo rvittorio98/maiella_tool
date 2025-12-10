@@ -12,7 +12,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
 
     <!-- Styles -->
-    <link rel="stylesheet" href="style.css?v=5">
+    <link rel="stylesheet" href="css/style.css">
 
     <!-- Three.js Library -->
     <script type="importmap">
@@ -26,49 +26,7 @@
     </script>
 
     <!-- Application Scripts -->
-    <script type="module" src="js/sphere-3d.js"></script>
-    <!-- <script defer src="js/typing-animation.js"></script> -->
-    <script defer src="js/script.js"></script>
-    <script>
-        // Sliders - inline to avoid cache issues
-        window.addEventListener('load', () => {
-            setTimeout(() => {
-                const sliders = document.querySelectorAll('input[type="range"]');
-
-                sliders.forEach(slider => {
-                    const valueDisplay = slider.nextElementSibling;
-
-                    slider.addEventListener('input', function () {
-                        valueDisplay.textContent = this.value;
-
-                        if (window.Sphere3D) {
-                            if (this.id === 'lateralScale') {
-                                window.Sphere3D.updateLateralScale(parseFloat(this.value) / 100);
-                            } else if (this.id === 'rotationY') {
-                                window.Sphere3D.updateRotation('y', parseFloat(this.value));
-                            } else if (this.id === 'peakCount') {
-                                window.Sphere3D.updatePeakCount(parseInt(this.value));
-                            } else if (this.id === 'roughness') {
-                                window.Sphere3D.updateDisplacement('roughness', parseFloat(this.value));
-                            } else if (this.id === 'displacementScale') {
-                                window.Sphere3D.updateDisplacement('scale', parseFloat(this.value));
-                            } else if (this.id === 'detail') {
-                                window.Sphere3D.updateDisplacement('detail', parseFloat(this.value));
-                            } else if (this.id === 'contrast') {
-                                window.Sphere3D.updatePostProcessing('contrast', parseFloat(this.value));
-                            } else if (this.id === 'blur') {
-                                window.Sphere3D.updatePostProcessing('blur', parseFloat(this.value));
-                            } else if (this.id === 'threshold') {
-                                window.Sphere3D.updatePostProcessing('threshold', parseFloat(this.value));
-                            }
-                        }
-                    });
-                });
-
-                console.log('✅ Sliders initialized');
-            }, 200);
-        });
-    </script>
+    <script type="module" src="js/main.js"></script>
 </head>
 
 <body>
@@ -130,8 +88,8 @@
                     <!-- Slider 'LATERAL SCALE' eliminato -->
                     <div class="slider-row">
                         <label>ROTATION Y</label>
-                        <input type="range" min="-50" max="50" value="-25" id="rotationY">
-                        <span class="value">-25</span>
+                        <input type="range" min="-180" max="180" value="-75" id="rotationY">
+                        <span class="value">-75</span>
                     </div>
                     <div class="slider-row">
                         <label>SCALE Y</label>
@@ -195,7 +153,7 @@
             <div class="export-title">SELECT YOUR MAIELLA MOUNTAIN FORMAT FILE</div>
             <div class="export-btn-row">
                 <button id="exportPNG" class="export-btn-popup">.png</button>
-                <button id="exportSVG" class="export-btn-popup">.sgv</button>
+
             </div>
             <button id="closeExportPopup" class="export-cancel">Cancel</button>
         </div>

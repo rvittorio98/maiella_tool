@@ -1,0 +1,68 @@
+/* === CODE AREA === */
+.code-area {
+    grid-column: 1;
+    grid-row: 2;
+    background-color: #eaeae4;
+    border-radius: 10px;
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    overflow: hidden;
+    position: relative;
+}
+
+.code-area::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 30px;
+    background: #eaeae4;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.code-text {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 8px;
+    /* Very small tech look */
+    line-height: 1.4;
+    color: #4a4a4a;
+    /* Subtle grey/black */
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    /* Removed fixed height so it can grow and be masked by parent */
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+
+.code-line {
+    font-size: 8px;
+    color: #000000;
+    margin-bottom: 2px;
+    flex-shrink: 0;
+    /* Prevent squeezing */
+}
+
+.typewriter {
+    overflow: hidden;
+    /* Ensures the content is not revealed until the animation */
+    white-space: nowrap;
+    /* Keeps the content on a single line */
+    width: 0;
+    /* Initial width */
+    animation: typing 0.5s steps(40, end) forwards;
+}
+
+@keyframes typing {
+    from {
+        width: 0
+    }
+
+    to {
+        width: 100%
+    }
+}

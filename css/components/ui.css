@@ -1,0 +1,148 @@
+/* === CONTROLS AREA === */
+.controls-area {
+    grid-column: 2;
+    grid-row: 2;
+    background-color: #eaeae4;
+    border-radius: 10px;
+    padding: 30px;
+    display: flex;
+    align-items: center;
+    gap: 2%;
+    /* Reduced gap for flexibility */
+    flex-wrap: nowrap;
+    /* Force horizontal alignment */
+    overflow: hidden;
+    /* NO SCROLLBARS allowed */
+    min-width: 0;
+}
+
+@media (max-width: 1400px) {
+    .controls-area {
+        gap: 10px;
+        padding: 15px;
+    }
+
+    .sliders-container {
+        gap: 10px;
+    }
+}
+
+.sliders-container {
+    display: flex;
+    gap: 30px;
+    /* Reduced gap */
+    flex: 2;
+    /* Take more space than export button */
+    flex-wrap: nowrap;
+    /* Force horizontal alignment */
+    min-width: 0;
+    /* Allow flex shrinking below content size */
+    justify-content: space-between;
+    align-items: center;
+    /* Vertically center the columns relative to container */
+}
+
+.slider-column {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    flex: 1;
+    min-width: 0;
+    /* Critical for shrinking */
+    justify-content: center;
+    /* Vertically center the rows inside the column */
+}
+
+.slider-row {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    /* Minimal gap */
+    width: 100%;
+}
+
+.slider-row label {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 8pt;
+    color: #002a00;
+    width: auto;
+    /* Auto width to shrink */
+    min-width: 60px;
+    /* Absolute minimum readability */
+    text-align: left;
+    flex-shrink: 1;
+    /* Allow label shrinking */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    /* Cut text if needed */
+}
+
+.slider-row input[type="range"] {
+    width: 100%;
+    /* Fill available space */
+    min-width: 40px;
+    /* Minimum usable width */
+    height: 0.5px;
+    background: #002a00;
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+    cursor: pointer;
+    flex-shrink: 1;
+    flex-grow: 1;
+}
+
+.slider-row input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #00a200;
+    cursor: pointer;
+}
+
+.slider-row input[type="range"]::-moz-range-thumb {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #00a200;
+    cursor: pointer;
+    border: none;
+}
+
+.slider-row .value {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 8pt;
+    color: #002a00;
+    width: 25px;
+    text-align: right;
+    flex-shrink: 0;
+}
+
+/* === EXPORT BUTTON === */
+.export-btn {
+    width: 120px;
+    /* Preferred width */
+    min-width: 80px;
+    /* Minimum width before breaking layout */
+    height: 120px;
+    /* Aspect ratio hack if height needs to match width, but fixed height is safer here */
+    background-color: #00a200;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Roboto Mono', monospace;
+    font-size: 14pt;
+    font-weight: 400;
+    color: #000000;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    transition: transform 0.2s;
+    flex-shrink: 1;
+    /* ALLOW SHRINKING */
+}
+
+.export-btn:hover {
+    background-color: #008800;
+}

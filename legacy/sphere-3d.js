@@ -752,8 +752,10 @@ const Sphere3D = {
         const imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
         const data = imageData.data;
 
-        const contrast = (this.postProcessing.contrast / 50) * 2;
-        const factor = (259 * (contrast * 255 + 255)) / (255 * (259 - contrast * 255));
+        // Correct Contrast Formula matches applyPostProcessing
+        const contrast = this.postProcessing.contrast * 2.5;
+        const factor = (contrast > 0) ? (259 * (contrast + 255)) / ((255 - contrast) * 255) : 1;
+
         for (let i = 0; i < data.length; i += 4) {
             data[i] = factor * (data[i] - 128) + 128;
             data[i + 1] = factor * (data[i + 1] - 128) + 128;
@@ -761,29 +763,123 @@ const Sphere3D = {
         }
         tempCtx.putImageData(imageData, 0, 0);
 
-        if (this.postProcessing.blur > 0) {
+        // Apply Blur if needed
+        if (this.postProcessing.blur > 0 && !asciiOverlayEnabled) {
             const blurAmount = this.postProcessing.blur * scale;
             tempCtx.filter = `blur(${blurAmount}px)`;
             tempCtx.drawImage(tempCanvas, 0, 0);
             tempCtx.filter = 'none';
         }
 
-        const finalData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
-        const finalPixels = finalData.data;
-        const threshold = (this.postProcessing.threshold / 50) * 255;
-        for (let i = 0; i < finalPixels.length; i += 4) {
-            const avg = (finalPixels[i] + finalPixels[i + 1] + finalPixels[i + 2]) / 3;
-            if (avg > threshold) {
-                finalPixels[i] = 255;
-                finalPixels[i + 1] = 255;
-                finalPixels[i + 2] = 255;
+        const invertTheme = !!window.Sphere3D.panelThemeInverted;
+
+        // === DITHERING MODE ===
+        if (asciiOverlayEnabled) {
+            // Re-read data after contrast/blur
+            const grayscaleData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+            const grayPixels = grayscaleData.data;
+
+            // Clear canvas to transparent
+            tempCtx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
+
+            const cellSize = ditheringParams.cellSize * scale;
+            const cols = Math.ceil(tempCanvas.width / cellSize);
+            const rows = Math.ceil(tempCanvas.height / cellSize);
+            const time = Date.now();
+            const morphLevel = ditheringParams.getMorphLevel();
+            const morphRatio = morphLevel / 30;
+
+            // Set foreground color based on theme
+            if (invertTheme) {
+                tempCtx.fillStyle = '#ffffff'; // Dark Mode -> White Text
             } else {
-                finalPixels[i] = 0;
-                finalPixels[i + 1] = 42;
-                finalPixels[i + 2] = 0;
+                tempCtx.fillStyle = '#002a00'; // Light Mode -> Dark Green Text
+            }
+
+            tempCtx.textAlign = 'center';
+            tempCtx.textBaseline = 'middle';
+
+            for (let y = 0; y < rows; y++) {
+                for (let x = 0; x < cols; x++) {
+                    const px = x * cellSize;
+                    const py = y * cellSize;
+                    const i = (py * tempCanvas.width + px) * 4;
+
+                    if (i >= grayPixels.length) continue;
+
+                    const avg = (grayPixels[i] + grayPixels[i + 1] + grayPixels[i + 2]) / 3;
+
+                    if (avg < 250) {
+                        const brightness = avg / 255;
+                        const cellHash = (x * 73 + y * 37) % 100; // Simplified hash, stable for static export
+                        const useCharacter = cellHash < (morphRatio * 100);
+
+                        if (useCharacter) {
+                            const charData = ditheringParams.getCharForBrightness(brightness, x, y, time);
+                            if (charData.type === 'dense') {
+                                tempCtx.font = `bold ${cellSize * 1.1}px 'Roboto Mono'`;
+                            } else {
+                                tempCtx.font = `${cellSize * 1.1}px 'Roboto Mono'`;
+                            }
+                            tempCtx.fillText(charData.char, px + cellSize / 2, py + cellSize / 2);
+                        } else {
+                            const maxRatio = ditheringParams.getMaxRadiusRatio();
+                            const sizes = [
+                                cellSize * 0.12 * maxRatio,
+                                cellSize * 0.25 * maxRatio,
+                                cellSize * 0.40 * maxRatio,
+                                cellSize * 0.60 * maxRatio,
+                                cellSize * 0.90 * maxRatio
+                            ];
+
+                            let idx = Math.floor((1 - brightness) * sizes.length);
+                            if (idx < 0) idx = 0;
+                            if (idx >= sizes.length) idx = sizes.length - 1;
+
+                            const radius = sizes[idx];
+                            if (radius > 0.05 * scale) { // scaled threshold
+                                tempCtx.beginPath();
+                                tempCtx.arc(px + cellSize / 2, py + cellSize / 2, radius, 0, Math.PI * 2);
+                                tempCtx.fill();
+                            }
+                        }
+                    }
+                }
             }
         }
-        tempCtx.putImageData(finalData, 0, 0);
+        // === THRESHOLD MODE ===
+        else {
+            const finalData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+            const finalPixels = finalData.data;
+            const threshold = (this.postProcessing.threshold / 40) * 255;
+
+            for (let i = 0; i < finalPixels.length; i += 4) {
+                const avg = (finalPixels[i] + finalPixels[i + 1] + finalPixels[i + 2]) / 3;
+
+                if (avg > threshold) {
+                    // Background -> Transparent
+                    finalPixels[i] = 0;
+                    finalPixels[i + 1] = 0;
+                    finalPixels[i + 2] = 0;
+                    finalPixels[i + 3] = 0;
+                } else {
+                    // Content
+                    if (invertTheme) {
+                        // Dark Mode Content -> White
+                        finalPixels[i] = 255;
+                        finalPixels[i + 1] = 255;
+                        finalPixels[i + 2] = 255;
+                    } else {
+                        // Light Mode Content -> Dark Green
+                        finalPixels[i] = 0;
+                        finalPixels[i + 1] = 42;
+                        finalPixels[i + 2] = 0;
+                    }
+                    finalPixels[i + 3] = 255;
+                }
+            }
+            tempCtx.putImageData(finalData, 0, 0);
+        }
 
         exportRenderer.dispose();
         return tempCanvas;
@@ -794,334 +890,13 @@ const Sphere3D = {
 
         const highResCanvas = this.renderHighRes(4);
 
-        const tempCanvas = document.createElement('canvas');
-        tempCanvas.width = highResCanvas.width;
-        tempCanvas.height = highResCanvas.height;
-        const tempCtx = tempCanvas.getContext('2d');
-
-        const imageData = tempCtx.createImageData(highResCanvas.width, highResCanvas.height);
-        const srcCtx = highResCanvas.getContext('2d');
-        const srcData = srcCtx.getImageData(0, 0, highResCanvas.width, highResCanvas.height).data;
-        const data = imageData.data;
-
-        for (let i = 0; i < srcData.length; i += 4) {
-            const brightness = (srcData[i] + srcData[i + 1] + srcData[i + 2]) / 3;
-            if (brightness < 128) {
-                data[i] = 0;
-                data[i + 1] = 0;
-                data[i + 2] = 0;
-                data[i + 3] = 255;
-            } else {
-                data[i] = 0;
-                data[i + 1] = 0;
-                data[i + 2] = 0;
-                data[i + 3] = 0;
-            }
-        }
-
-        tempCtx.putImageData(imageData, 0, 0);
-
         const link = document.createElement('a');
         link.download = `maiella-sphere-${Date.now()}.png`;
-        link.href = tempCanvas.toDataURL('image/png');
+        link.href = highResCanvas.toDataURL('image/png');
         link.click();
     },
 
-    exportSVG() {
-        if (!this.displayCanvas) return;
 
-        const highResCanvas = this.renderHighRes(4);
-        const ctx = highResCanvas.getContext('2d', { willReadFrequently: true });
-        const imageData = ctx.getImageData(0, 0, highResCanvas.width, highResCanvas.height);
-        const data = imageData.data;
-        const w = highResCanvas.width;
-        const h = highResCanvas.height;
-
-        const binary = new Uint8Array(w * h);
-        for (let y = 0; y < h; y++) {
-            for (let x = 0; x < w; x++) {
-                const idx = (y * w + x) * 4;
-                const isGreen = data[idx] < 10 && data[idx + 1] > 30 && data[idx + 1] < 50 && data[idx + 2] < 10;
-                binary[y * w + x] = isGreen ? 1 : 0;
-            }
-        }
-
-        const visited = new Uint8Array(w * h);
-        const regions = [];
-
-        for (let y = 0; y < h; y++) {
-            for (let x = 0; x < w; x++) {
-                const idx = y * w + x;
-                if (visited[idx] || binary[idx] === 0) continue;
-
-                const region = this.floodFillRegion(binary, visited, w, h, x, y);
-                if (region.pixels > 500) {
-                    regions.push(region);
-                }
-            }
-        }
-
-        regions.sort((a, b) => b.pixels - a.pixels);
-
-        if (regions.length === 0) {
-            console.error('No regions found');
-            return;
-        }
-
-        let shapeBBoxMinX = w, shapeBBoxMaxX = 0, shapeBBoxMinY = h, shapeBBoxMaxY = 0;
-
-        shapeBBoxMinX = Math.max(0, shapeBBoxMinX);
-        shapeBBoxMinY = Math.max(0, shapeBBoxMinY);
-        shapeBBoxMaxX = Math.min(w, shapeBBoxMaxX);
-        shapeBBoxMaxY = Math.min(h, shapeBBoxMaxY);
-        const viewWidth = shapeBBoxMaxX - shapeBBoxMinX;
-        const viewHeight = shapeBBoxMaxY - shapeBBoxMinY;
-
-        let pathData = '';
-        let maxPixels = 0;
-        regions.forEach(region => {
-            let touchesBorder = false;
-            for (const idx of region.coords) {
-                const x = idx % w;
-                const y = Math.floor(idx / w);
-                if (x === 0 || x === w - 1 || y === 0 || y === h - 1) {
-                    touchesBorder = true;
-                    break;
-                }
-            }
-            if (!touchesBorder && region.pixels > maxPixels) maxPixels = region.pixels;
-        });
-        regions.forEach((region, regionIndex) => {
-            let touchesBorder = false;
-            for (const idx of region.coords) {
-                const x = idx % w;
-                const y = Math.floor(idx / w);
-                if (x === 0 || x === w - 1 || y === 0 || y === h - 1) {
-                    touchesBorder = true;
-                    break;
-                }
-            }
-            if (touchesBorder) return;
-            const regionSet = new Set(region.coords);
-            const regionBinary = new Uint8Array(w * h);
-            region.coords.forEach(coord => {
-                regionBinary[coord] = 1;
-            });
-            const outerContour = this.extractOuterContour(regionBinary, w, h);
-            if (!outerContour || outerContour.length < 10) return;
-            outerContour.forEach(p => {
-                shapeBBoxMinX = Math.min(shapeBBoxMinX, p.x);
-                shapeBBoxMaxX = Math.max(shapeBBoxMaxX, p.x);
-                shapeBBoxMinY = Math.min(shapeBBoxMinY, p.y);
-                shapeBBoxMaxY = Math.max(shapeBBoxMaxY, p.y);
-            });
-            const simplifiedOuter = this.rdpSimplify(outerContour, 4.0);
-            const offsetOuter = simplifiedOuter.map(p => ({ x: p.x - shapeBBoxMinX, y: p.y - shapeBBoxMinY }));
-            pathData += this.toBezierPath(offsetOuter);
-            const holes = [];
-            const holeVisited = new Uint8Array(w * h);
-            let minX = w, maxX = 0, minY = h, maxY = 0;
-            region.coords.forEach(idx => {
-                const x = idx % w;
-                const y = Math.floor(idx / w);
-                minX = Math.min(minX, x);
-                maxX = Math.max(maxX, x);
-                minY = Math.min(minY, y);
-                maxY = Math.max(maxY, y);
-            });
-            for (let y = minY; y <= maxY; y++) {
-                for (let x = minX; x <= maxX; x++) {
-                    const idx = y * w + x;
-                    if (holeVisited[idx] || binary[idx] === 1) continue;
-                    let hasGreenNeighbor = false;
-                    for (let dy = -1; dy <= 1 && !hasGreenNeighbor; dy++) {
-                        for (let dx = -1; dx <= 1; dx++) {
-                            if (dx === 0 && dy === 0) continue;
-                            const neighborIdx = (y + dy) * w + (x + dx);
-                            if (regionSet.has(neighborIdx)) {
-                                hasGreenNeighbor = true;
-                                break;
-                            }
-                        }
-                    }
-                    if (hasGreenNeighbor) {
-                        const holeRegion = this.floodFillRegion(binary, holeVisited, w, h, x, y, 0);
-                        if (holeRegion.pixels > 200) {
-                            holes.push(holeRegion);
-                        }
-                    }
-                }
-            }
-            holes.forEach(hole => {
-                const holeBinary = new Uint8Array(w * h);
-                hole.coords.forEach(coord => {
-                    holeBinary[coord] = 1;
-                });
-                const holeContour = this.extractOuterContour(holeBinary, w, h);
-                if (holeContour && holeContour.length > 10) {
-                    const simplifiedHole = this.rdpSimplify(holeContour, 4.0);
-                    const reversed = simplifiedHole.slice().reverse();
-                    const offsetHole = reversed.map(p => ({ x: p.x - shapeBBoxMinX, y: p.y - shapeBBoxMinY }));
-                    pathData += ' ' + this.toBezierPath(offsetHole);
-                }
-            });
-        });
-
-        const svgContent = `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="${viewWidth}" height="${viewHeight}" viewBox="0 0 ${viewWidth} ${viewHeight}">
-    <path d="${pathData}" fill="#002a00" fill-rule="evenodd"/>
-</svg>`;
-
-        const blob = new Blob([svgContent], { type: 'image/svg+xml' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.download = `maiella-sphere-${Date.now()}.svg`;
-        link.href = url;
-        link.click();
-        URL.revokeObjectURL(url);
-    },
-
-    floodFillRegion(binary, visited, w, h, startX, startY, targetValue = 1) {
-        const stack = [{ x: startX, y: startY }];
-        const coords = [];
-        let pixels = 0;
-
-        if (targetValue === undefined) {
-            targetValue = binary[startY * w + startX];
-        }
-
-        while (stack.length > 0) {
-            const { x, y } = stack.pop();
-            const idx = y * w + x;
-
-            if (x < 0 || x >= w || y < 0 || y >= h) continue;
-            if (visited[idx] || binary[idx] !== targetValue) continue;
-
-            visited[idx] = 1;
-            coords.push(idx);
-            pixels++;
-
-            stack.push({ x: x + 1, y: y });
-            stack.push({ x: x - 1, y: y });
-            stack.push({ x: x, y: y + 1 });
-            stack.push({ x: x, y: y - 1 });
-        }
-
-        return { pixels, coords };
-    },
-
-    extractOuterContour(binary, w, h) {
-        let startX = -1, startY = -1;
-
-        for (let y = 0; y < h && startY === -1; y++) {
-            for (let x = 0; x < w; x++) {
-                if (binary[y * w + x] === 1) {
-                    startX = x;
-                    startY = y;
-                    break;
-                }
-            }
-        }
-
-        if (startX === -1) return null;
-
-        const contour = [];
-        let x = startX, y = startY;
-        let dir = 7;
-        const directions = [
-            { dx: 1, dy: 0 },
-            { dx: 1, dy: 1 },
-            { dx: 0, dy: 1 },
-            { dx: -1, dy: 1 },
-            { dx: -1, dy: 0 },
-            { dx: -1, dy: -1 },
-            { dx: 0, dy: -1 },
-            { dx: 1, dy: -1 }
-        ];
-
-        let steps = 0;
-        const maxSteps = w * h;
-
-        do {
-            contour.push({ x, y });
-
-            let found = false;
-            for (let i = 0; i < 8; i++) {
-                const checkDir = (dir + i) % 8;
-                const nx = x + directions[checkDir].dx;
-                const ny = y + directions[checkDir].dy;
-
-                if (nx >= 0 && nx < w && ny >= 0 && ny < h && binary[ny * w + nx] === 1) {
-                    x = nx;
-                    y = ny;
-                    dir = (checkDir + 5) % 8;
-                    found = true;
-                    break;
-                }
-            }
-
-            if (!found) break;
-            steps++;
-
-        } while ((x !== startX || y !== startY) && steps < maxSteps);
-
-        return contour;
-    },
-
-    toBezierPath(points) {
-        if (points.length < 3) return '';
-
-        let path = `M ${points[0].x.toFixed(2)},${points[0].y.toFixed(2)}`;
-
-        for (let i = 0; i < points.length; i++) {
-            const p0 = points[(i - 1 + points.length) % points.length];
-            const p1 = points[i];
-            const p2 = points[(i + 1) % points.length];
-            const p3 = points[(i + 2) % points.length];
-
-            const tension = 0.5;
-            const cp1x = p1.x + (p2.x - p0.x) / 6 * tension;
-            const cp1y = p1.y + (p2.y - p0.y) / 6 * tension;
-            const cp2x = p2.x - (p3.x - p1.x) / 6 * tension;
-            const cp2y = p2.y - (p3.y - p1.y) / 6 * tension;
-
-            path += ` C ${cp1x.toFixed(2)},${cp1y.toFixed(2)} ${cp2x.toFixed(2)},${cp2y.toFixed(2)} ${p2.x.toFixed(2)},${p2.y.toFixed(2)}`;
-        }
-
-        path += ' Z';
-        return path;
-    },
-
-    rdpSimplify(points, epsilon) {
-        if (points.length < 3) return points;
-
-        let maxDist = 0, maxIdx = 0;
-        const first = points[0], last = points[points.length - 1];
-
-        for (let i = 1; i < points.length - 1; i++) {
-            const p = points[i];
-            const dx = last.x - first.x;
-            const dy = last.y - first.y;
-            const norm = Math.sqrt(dx * dx + dy * dy);
-
-            const dist = norm === 0
-                ? Math.hypot(p.x - first.x, p.y - first.y)
-                : Math.abs(dy * p.x - dx * p.y + last.x * first.y - last.y * first.x) / norm;
-
-            if (dist > maxDist) {
-                maxDist = dist;
-                maxIdx = i;
-            }
-        }
-
-        if (maxDist > epsilon) {
-            const left = this.rdpSimplify(points.slice(0, maxIdx + 1), epsilon);
-            const right = this.rdpSimplify(points.slice(maxIdx), epsilon);
-            return left.slice(0, -1).concat(right);
-        }
-
-        return [first, last];
-    }
 };
 
 window.Sphere3D = Sphere3D;
